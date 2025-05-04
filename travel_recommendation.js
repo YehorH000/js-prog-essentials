@@ -3,52 +3,67 @@ function handleSearch() {
         .getElementById('searchInput')
         .value.trim()
         .toLowerCase()
-    const resultsDiv = document.getElementById('results')
-    resultsDiv.innerHTML = ''
-
-    if (!input) {
-        alert('Please enter a valid search keyword.')
-        return
-    }
+    const resultsContainer = document.getElementById('results')
+    resultsContainer.innerHTML = ''
 
     fetch('travel_recommendation_api.json')
         .then((res) => res.json())
         .then((data) => {
-            let matchedItems = []
+            const matches = []
 
-            if (input.includes('beach')) {
-                matchedItems = data.beaches
-            } else if (input.includes('temple')) {
-                matchedItems = data.temples
-            } else if (input.includes('country')) {
-                // flatten all cities from countries
-                matchedItems = data.countries.flatMap(
-                    (country) => country.cities
-                )
-            }
+            data.countries.forEach((country) => {
+                country.cities.forEach((city) => {
+                    if (
+                        city.name.toLowerCase().includes(input) ||
+                        city.description.toLowerCase().includes(input) ||
+                        country.name.toLowerCase().includes(input)
+                    ) {
+                        matches.push(city)
+                    }
+                })
+            })
 
-            if (matchedItems.length === 0) {
-                resultsDiv.innerHTML = '<p>No results found.</p>'
+            data.temples.forEach((temple) => {
+                if (
+                    temple.name.toLowerCase().includes(input) ||
+                    temple.description.toLowerCase().includes(input)
+                ) {
+                    matches.push(temple)
+                }
+            })
+
+            data.beaches.forEach((beach) => {
+                if (
+                    beach.name.toLowerCase().includes(input) ||
+                    beach.description.toLowerCase().includes(input)
+                ) {
+                    matches.push(beach)
+                }
+            })
+
+            if (matches.length === 0) {
+                resultsContainer.innerHTML = '<p>No results found.</p>'
                 return
             }
 
-            matchedItems.forEach((item) => {
+            matches.forEach((place) => {
                 const card = document.createElement('div')
                 card.className = 'recommendation-card'
+
                 card.innerHTML = `
-                  <img src="assets/${item.imageUrl}" alt="${item.name}" class="recommendation-img"/>
-                  <div class="card-content">
-                    <h3 class="card-title">${item.name}</h3>
-                    <p class="card-description">${item.description}</p>
-                    <a href="#" class="visit-button">Visit</a>
-                  </div>
-                `
-                resultsDiv.appendChild(card)
+            <img class="recommendation-img" src="assets/${place.imageUrl}" alt="${place.name}" />
+            <div class="card-content">
+              <h3 class="card-title">${place.name}</h3>
+              <p class="card-description">${place.description}</p>
+              <a href="#" class="visit-button">Visit</a>
+            </div>
+          `
+                resultsContainer.appendChild(card)
             })
         })
         .catch((err) => {
-            console.error('Error fetching data:', err)
-            resultsDiv.innerHTML = '<p>Error loading data.</p>'
+            console.error('Error loading data', err)
+            resultsContainer.innerHTML = '<p>Failed to load data.</p>'
         })
 }
 
